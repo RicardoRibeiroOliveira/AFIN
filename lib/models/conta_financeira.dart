@@ -2,8 +2,11 @@ class ContaFinanceira {
   final int? id;
   final int clienteId;
   final String tipo;
+  final String grupo;
+  final String descricao;
   final double valor;
   final String dataEmissao;
+  final String dataVencimento;
   final String? dataPagamento;
   final String status;
   final double? valorRecebido;
@@ -13,8 +16,11 @@ class ContaFinanceira {
     this.id,
     required this.clienteId,
     required this.tipo,
+    required this.grupo,
+    required this.descricao,
     required this.valor,
     required this.dataEmissao,
+    required this.dataVencimento,
     required this.status,
     this.dataPagamento,
     this.valorRecebido,
@@ -26,8 +32,11 @@ class ContaFinanceira {
       'id': id,
       'cliente_id': clienteId,
       'tipo': tipo,
+      'grupo': grupo,
+      'descricao': descricao,
       'valor': valor,
       'data_emissao': dataEmissao,
+      'data_vencimento': dataVencimento,
       'data_pagamento': dataPagamento,
       'status': status,
       'valor_recebido': valorRecebido,
@@ -40,8 +49,12 @@ class ContaFinanceira {
       id: map['id'] as int?,
       clienteId: map['cliente_id'] as int,
       tipo: map['tipo'] as String,
+      grupo: map['grupo'] as String? ?? 'Sem grupo',
+      descricao: map['descricao'] as String? ?? '',
       valor: (map['valor'] as num).toDouble(),
       dataEmissao: map['data_emissao'] as String,
+      dataVencimento:
+          map['data_vencimento'] as String? ?? map['data_emissao'] as String,
       dataPagamento: map['data_pagamento'] as String?,
       status: map['status'] as String,
       valorRecebido: (map['valor_recebido'] as num?)?.toDouble(),

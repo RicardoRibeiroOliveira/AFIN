@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'services/database_helper.dart';
-import 'view/login_page.dart';
+import 'view/home_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,7 +48,7 @@ class AfinApp extends StatelessWidget {
           fillColor: Colors.white,
         ),
       ),
-      home: const LoginPage(),
+      home: const HomePage(),
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../services/google_drive_service.dart';
 import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
@@ -17,8 +16,6 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _loading = true);
 
     try {
-      await BackupService.instance.authenticate();
-
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomePage()),
@@ -26,7 +23,7 @@ class _LoginPageState extends State<LoginPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao autenticar: $e')),
+        SnackBar(content: Text('Falha ao abrir o app: $e')),
       );
     } finally {
       if (mounted) {
@@ -63,15 +60,15 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Os dados ficam salvos localmente no Android. O Google Drive e usado apenas quando voce decidir enviar ou restaurar um backup manual.',
+                      'Os dados ficam salvos localmente no Android e o backup agora gera um arquivo compactado com banco e anexos.',
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 24),
                     FilledButton.icon(
                       onPressed: _loading ? null : _login,
-                      icon: const Icon(Icons.account_circle_outlined),
+                      icon: const Icon(Icons.login),
                       label: Text(
-                        _loading ? 'Conectando...' : 'Entrar com Google',
+                        _loading ? 'Abrindo...' : 'Entrar',
                       ),
                     ),
                     const SizedBox(height: 12),
