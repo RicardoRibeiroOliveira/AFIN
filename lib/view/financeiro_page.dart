@@ -222,6 +222,61 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
     _carregarDados();
   }
 
+  Future<void> _excluirConta(Map<String, dynamic> conta) async {
+    final tipoLabel =
+        (conta['tipo'] as String?) == 'Receber'
+            ? 'conta a receber'
+            : 'conta a pagar';
+    final descricao = (conta['descricao'] as String?)?.trim();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir conta'),
+          content: Text(
+            descricao != null && descricao.isNotEmpty
+                ? 'Deseja excluir esta $tipoLabel de "$descricao"?'
+                : 'Deseja excluir esta $tipoLabel?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    final anexoPath = conta['foto_path'] as String?;
+
+    await DatabaseHelper.instance.deleteConta(conta['id'] as int);
+
+    if (anexoPath != null && anexoPath.trim().isNotEmpty) {
+      final arquivo = File(anexoPath);
+      if (await arquivo.exists()) {
+        await arquivo.delete();
+      }
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Conta excluida com sucesso.')),
+    );
+    _carregarDados();
+  }
+
   @override
   Widget build(BuildContext context) {
     final currency = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -434,6 +489,22 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
                                                     ),
                                                 icon: const Icon(
                                                   Icons.edit_outlined,
+                                                ),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              IconButton(
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                padding: EdgeInsets.zero,
+                                                constraints: const BoxConstraints(
+                                                  minWidth: 32,
+                                                  minHeight: 32,
+                                                ),
+                                                tooltip: 'Excluir conta',
+                                                onPressed:
+                                                    () => _excluirConta(conta),
+                                                icon: const Icon(
+                                                  Icons.delete_outline,
                                                 ),
                                               ),
                                               const SizedBox(width: 4),
@@ -694,6 +765,61 @@ class _CadastroContaPageState extends State<CadastroContaPage> {
     }
   }
 
+  Future<void> _excluirConta() async {
+    final conta = widget.contaInicial;
+    if (conta == null) {
+      return;
+    }
+
+    final tipoLabel =
+        widget.tipo == 'Receber' ? 'conta a receber' : 'conta a pagar';
+    final descricao = (conta['descricao'] as String?)?.trim();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Excluir conta'),
+          content: Text(
+            descricao != null && descricao.isNotEmpty
+                ? 'Deseja excluir esta $tipoLabel de "$descricao"?'
+                : 'Deseja excluir esta $tipoLabel?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    final anexoPath = conta['foto_path'] as String?;
+
+    await DatabaseHelper.instance.deleteConta(conta['id'] as int);
+
+    if (anexoPath != null && anexoPath.trim().isNotEmpty) {
+      final arquivo = File(anexoPath);
+      if (await arquivo.exists()) {
+        await arquivo.delete();
+      }
+    }
+
+    if (!mounted) return;
+    Navigator.of(context).pop(true);
+  }
+
   @override
   Widget build(BuildContext context) {
     final vencimentoFormatado = DateFormat(
@@ -708,6 +834,14 @@ class _CadastroContaPageState extends State<CadastroContaPage> {
               ? 'Editar Conta ${widget.tipo}'
               : 'Cadastrar Conta ${widget.tipo}',
         ),
+        actions: [
+          if (_isEditing)
+            IconButton(
+              tooltip: 'Excluir conta',
+              onPressed: _isSaving ? null : _excluirConta,
+              icon: const Icon(Icons.delete_outline),
+            ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
