@@ -383,6 +383,20 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> estornarConta(int contaId) async {
+    final db = await database;
+    return db.update(
+      'financeiro',
+      {
+        'status': 'Pendente',
+        'valor_recebido': null,
+        'data_pagamento': null,
+      },
+      where: 'id = ?',
+      whereArgs: [contaId],
+    );
+  }
+
   Future<Map<String, double>> getResumoMensal() async {
     final db = await database;
     final now = DateTime.now();
