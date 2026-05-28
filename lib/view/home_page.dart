@@ -42,6 +42,11 @@ class _HomePageState extends State<HomePage> {
         );
   }
 
+  void _handleFinanceiroChanged() {
+    if (!mounted) return;
+    setState(_refreshDashboard);
+  }
+
   Future<void> _criarBackup() async {
     try {
       final backupPath = await BackupService.instance.createBackup();
@@ -126,7 +131,7 @@ class _HomePageState extends State<HomePage> {
         onRestore: _restaurar,
       ),
       const ClientesPage(),
-      const FinanceiroPage(),
+      FinanceiroPage(onDataChanged: _handleFinanceiroChanged),
     ];
 
     return Scaffold(
@@ -134,7 +139,14 @@ class _HomePageState extends State<HomePage> {
       body: pages[_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        onDestinationSelected: (index) {
+          setState(() {
+            _currentIndex = index;
+            if (index == 0) {
+              _refreshDashboard();
+            }
+          });
+        },
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
