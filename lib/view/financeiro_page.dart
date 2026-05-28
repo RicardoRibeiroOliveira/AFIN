@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -11,7 +11,12 @@ import '../models/conta_financeira.dart';
 import '../services/database_helper.dart';
 
 class FinanceiroPage extends StatefulWidget {
-  const FinanceiroPage({super.key});
+  final VoidCallback? onDataChanged;
+
+  const FinanceiroPage({
+    super.key,
+    this.onDataChanged,
+  });
 
   @override
   State<FinanceiroPage> createState() => _FinanceiroPageState();
@@ -117,6 +122,7 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
     );
 
     if (changed == true) {
+      widget.onDataChanged?.call();
       _carregarDados();
     }
   }
@@ -134,13 +140,7 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
   Future<void> _marcarConta(Map<String, dynamic> conta) async {
     final valorInicial =
         (conta['valor'] as num).toStringAsFixed(2).replaceAll('.', ',');
-    final formatter = MaskTextInputFormatter(
-      mask: '###.###.###,##',
-      filter: {'#': RegExp(r'[0-9]')},
-    );
-    final controller = TextEditingController(
-      text: formatter.maskText(valorInicial),
-    );
+    final controller = TextEditingController(text: valorInicial);
 
     DateTime dataPagamento = DateTime.now();
 
@@ -161,7 +161,7 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
                 children: [
                   TextField(
                     controller: controller,
-                    inputFormatters: [formatter],
+                    inputFormatters: [_currencyInputFormatter],
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -219,6 +219,7 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
       valorRecebido: valor,
       dataPagamento: dataPagamento,
     );
+    widget.onDataChanged?.call();
     _carregarDados();
   }
 
@@ -274,6 +275,51 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Conta excluida com sucesso.')),
     );
+    widget.onDataChanged?.call();
+    _carregarDados();
+  }
+
+  Future<void> _estornarConta(Map<String, dynamic> conta) async {
+    final tipoLabel =
+        (conta['tipo'] as String?) == 'Receber'
+            ? 'conta a receber'
+            : 'conta a pagar';
+    final descricao = (conta['descricao'] as String?)?.trim();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Extornar conta'),
+          content: Text(
+            descricao != null && descricao.isNotEmpty
+                ? 'Deseja extornar esta $tipoLabel de "$descricao"? Ela voltara para pendente.'
+                : 'Deseja extornar esta $tipoLabel? Ela voltara para pendente.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Extornar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return;
+    }
+
+    await DatabaseHelper.instance.estornarConta(conta['id'] as int);
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Conta extornada com sucesso.')),
+    );
+    widget.onDataChanged?.call();
     _carregarDados();
   }
 
@@ -453,8 +499,8 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
                                     const SizedBox(width: 12),
                                     ConstrainedBox(
                                       constraints: const BoxConstraints(
-                                        minWidth: 88,
-                                        maxWidth: 112,
+                                        minWidth: 116,
+                                        maxWidth: 132,
                                       ),
                                       child: Column(
                                         crossAxisAlignment: CrossAxisAlignment.end,
@@ -470,9 +516,9 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
                                                 ),
                                           ),
                                           const SizedBox(height: 8),
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.end,
+                                          Wrap(
+                                            alignment: WrapAlignment.end,
+                                            spacing: 4,
                                             children: [
                                               IconButton(
                                                 visualDensity:
@@ -491,7 +537,6 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
                                                   Icons.edit_outlined,
                                                 ),
                                               ),
-                                              const SizedBox(width: 4),
                                               IconButton(
                                                 visualDensity:
                                                     VisualDensity.compact,
@@ -507,7 +552,6 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
                                                   Icons.delete_outline,
                                                 ),
                                               ),
-                                              const SizedBox(width: 4),
                                               IconButton(
                                                 visualDensity:
                                                     VisualDensity.compact,
@@ -518,15 +562,15 @@ class _FinanceiroPageState extends State<FinanceiroPage> {
                                                 ),
                                                 tooltip:
                                                     isPago
-                                                        ? 'Conta concluida'
+                                                        ? 'Extornar conta'
                                                         : '$acaoLabel conta',
                                                 onPressed:
                                                     isPago
-                                                        ? null
+                                                        ? () => _estornarConta(conta)
                                                         : () => _marcarConta(conta),
                                                 icon: Icon(
                                                   isPago
-                                                      ? Icons.check_circle_outline
+                                                      ? Icons.undo_outlined
                                                       : _tipoAtual == 'Receber'
                                                       ? Icons
                                                           .arrow_circle_down_outlined
@@ -585,10 +629,6 @@ class _CadastroContaPageState extends State<CadastroContaPage> {
   final _formKey = GlobalKey<FormState>();
   final _descricaoController = TextEditingController();
   final _valorController = TextEditingController();
-  final _currencyFormatter = MaskTextInputFormatter(
-    mask: '###.###.###,##',
-    filter: {'#': RegExp(r'[0-9]')},
-  );
   bool _isSaving = false;
   DateTime _dataEmissao = DateTime.now();
   DateTime _dataVencimento = DateTime.now();
@@ -915,7 +955,7 @@ class _CadastroContaPageState extends State<CadastroContaPage> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _valorController,
-                  inputFormatters: [_currencyFormatter],
+                  inputFormatters: [_currencyInputFormatter],
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
@@ -1239,4 +1279,30 @@ double _parseCurrency(String value) {
 
 String _formatCurrency(double value) {
   return value.toStringAsFixed(2).replaceAll('.', ',');
+}
+
+final _currencyInputFormatter = _CurrencyTextInputFormatter();
+
+class _CurrencyTextInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final rawText = newValue.text.replaceAll('.', ',');
+
+    if (rawText.isEmpty) {
+      return newValue;
+    }
+
+    if (!RegExp(r'^\d*(,\d{0,2})?$').hasMatch(rawText)) {
+      return oldValue;
+    }
+
+    return newValue.copyWith(
+      text: rawText,
+      selection: TextSelection.collapsed(offset: rawText.length),
+      composing: TextRange.empty,
+    );
+  }
 }
