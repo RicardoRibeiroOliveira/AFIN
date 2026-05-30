@@ -197,13 +197,15 @@ class _DashboardTab extends StatelessWidget {
           builder: (context, snapshot) {
             final totalReceber = snapshot.data?['totalReceber'] ?? 0;
             final totalPagar = snapshot.data?['totalPagar'] ?? 0;
+            final totalRecebido = snapshot.data?['totalRecebido'] ?? 0;
+            final totalPago = snapshot.data?['totalPago'] ?? 0;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Card(
                   child: ListTile(
-                    title: const Text('Total a Receber do Mes'),
+                    title: const Text('Total a Receber do Mês'),
                     subtitle: Text(currency.format(totalReceber)),
                     leading: const CircleAvatar(
                       backgroundColor: Color(0xFFD9A441),
@@ -213,7 +215,17 @@ class _DashboardTab extends StatelessWidget {
                 ),
                 Card(
                   child: ListTile(
-                    title: const Text('Total a Pagar do Mes'),
+                    title: const Text('Total Recebido no Mês'),
+                    subtitle: Text(currency.format(totalRecebido)),
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFF4CAF50),
+                      child: Icon(Icons.south_west, color: Colors.white),
+                    ),
+                  ),
+                ),
+                Card(
+                  child: ListTile(
+                    title: const Text('Total a Pagar do Mês'),
                     subtitle: Text(currency.format(totalPagar)),
                     leading: const CircleAvatar(
                       backgroundColor: Color(0xFF78909C),
@@ -221,11 +233,21 @@ class _DashboardTab extends StatelessWidget {
                     ),
                   ),
                 ),
+                Card(
+                  child: ListTile(
+                    title: const Text('Total Pago no Mês'),
+                    subtitle: Text(currency.format(totalPago)),
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFF607D8B),
+                      child: Icon(Icons.north_east, color: Colors.white),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
                 const TabBar(
                   tabs: [
-                    Tab(text: 'Vencimentos do Mes'),
-                    Tab(text: 'Lancamentos Futuros'),
+                    Tab(text: 'Vencimentos do Mês'),
+                    Tab(text: 'Lançamentos Futuros'),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -235,12 +257,12 @@ class _DashboardTab extends StatelessWidget {
                       _LancamentosList(
                         future: lancamentosMesFuture,
                         currency: currency,
-                        emptyMessage: 'Nenhum vencimento neste mes.',
+                        emptyMessage: 'Nenhum vencimento neste mês.',
                       ),
                       _LancamentosList(
                         future: lancamentosProximoMesFuture,
                         currency: currency,
-                        emptyMessage: 'Nenhum lancamento para o proximo mes.',
+                        emptyMessage: 'Nenhum lançamento para o proximo mês.',
                       ),
                     ],
                   ),

@@ -405,16 +405,42 @@ class DatabaseHelper {
 
     final result = await db.rawQuery('''
       SELECT
-        COALESCE(SUM(CASE WHEN tipo = 'Receber' THEN valor ELSE 0 END), 0) AS total_receber,
-        COALESCE(SUM(CASE WHEN tipo = 'Pagar' THEN valor ELSE 0 END), 0) AS total_pagar
+        COALESCE(SUM(CASE
+          WHEN tipo = 'Receber' AND data_vencimento >= ? AND data_vencimento < ? THEN valor
+          ELSE 0
+        END), 0) AS total_receber,
+        COALESCE(SUM(CASE
+          WHEN tipo = 'Pagar' AND data_vencimento >= ? AND data_vencimento < ? THEN valor
+          ELSE 0
+        END), 0) AS total_pagar,
+        COALESCE(SUM(CASE
+          WHEN tipo = 'Receber' AND status = 'Pago' AND data_pagamento >= ? AND data_pagamento < ?
+            THEN COALESCE(valor_recebido, valor)
+          ELSE 0
+        END), 0) AS total_recebido,
+        COALESCE(SUM(CASE
+          WHEN tipo = 'Pagar' AND status = 'Pago' AND data_pagamento >= ? AND data_pagamento < ?
+            THEN COALESCE(valor_recebido, valor)
+          ELSE 0
+        END), 0) AS total_pago
       FROM financeiro
-      WHERE data_vencimento >= ? AND data_vencimento < ?
-    ''', [monthStart, nextMonth]);
+    ''', [
+      monthStart,
+      nextMonth,
+      monthStart,
+      nextMonth,
+      monthStart,
+      nextMonth,
+      monthStart,
+      nextMonth,
+    ]);
 
     final row = result.first;
     return {
       'totalReceber': (row['total_receber'] as num?)?.toDouble() ?? 0,
       'totalPagar': (row['total_pagar'] as num?)?.toDouble() ?? 0,
+      'totalRecebido': (row['total_recebido'] as num?)?.toDouble() ?? 0,
+      'totalPago': (row['total_pago'] as num?)?.toDouble() ?? 0,
     };
   }
 
