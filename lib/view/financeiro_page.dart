@@ -796,13 +796,18 @@ class _CadastroContaPageState extends State<CadastroContaPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nao foi possivel salvar a conta: $e')),
+        SnackBar(content: Text(_buildContaErrorMessage(e))),
       );
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  String _buildContaErrorMessage(Object error) {
+    final action = _isEditing ? 'atualizar' : 'cadastrar';
+    return 'Nao foi possivel $action a conta.';
   }
 
   Future<void> _excluirConta() async {
@@ -1057,13 +1062,25 @@ class _CadastroGrupoPageState extends State<CadastroGrupoPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nao foi possivel salvar o grupo: $e')),
+        SnackBar(content: Text(_buildGrupoErrorMessage(e))),
       );
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  String _buildGrupoErrorMessage(Object error) {
+    final normalizedError = error.toString().toLowerCase();
+
+    if (normalizedError.contains('unique constraint failed') &&
+        normalizedError.contains('grupos_financeiros.nome') &&
+        normalizedError.contains('grupos_financeiros.tipo')) {
+      return 'Nao foi possivel cadastrar o grupo. Ja existe um grupo com esse nome para este tipo.';
+    }
+
+    return 'Nao foi possivel cadastrar o grupo.';
   }
 
   @override

@@ -250,13 +250,25 @@ class _CadastroClientePageState extends State<CadastroClientePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nao foi possivel salvar o cliente: $e')),
+        SnackBar(content: Text(_buildClienteErrorMessage(e))),
       );
     } finally {
       if (mounted) {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  String _buildClienteErrorMessage(Object error) {
+    final action = widget.clienteInicial == null ? 'cadastrar' : 'atualizar';
+    final normalizedError = error.toString().toLowerCase();
+
+    if (normalizedError.contains('unique constraint failed') &&
+        normalizedError.contains('clientes.documento')) {
+      return 'Nao foi possivel $action o cliente. CPF/CNPJ ja esta cadastrado em outro cliente.';
+    }
+
+    return 'Nao foi possivel $action o cliente.';
   }
 
   @override
